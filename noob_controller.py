@@ -28,6 +28,16 @@ class State:
     [-30,  5, 10, 15, 15, 10,  5,-30],
     [-40,-20,  0,  5,  5,  0,-20,-40],
     [-50,-40,-30,-30,-30,-30,-40,-50]])
+    #array para evaluacion enemiga
+    pos_eval_enemy = np.array(
+    [[-50,-40,-30,-30,-30,-30,-40,-50],
+    [-40,-20,  0,  5,  5,  0,-20,-40],
+    [-30,  5, 10, 15, 15, 5,  0,-30],
+    [-30,  0, 15, 20, 20, 15,  0,-30],
+    [-30,  5, 15, 20, 20, 15,  5,-30],
+    [-30,  0, 10, 15, 15, 10,  0,-30],
+    [-40,-20,  0,  0,  0,  0,-20,-40],
+    [-50,-40,-30,-30,-30,-30,-40,-50]])
 
     def __init__(self, board, my_knights, enemy_knights):
         self.board = np.array(board) #estado tablero
@@ -40,11 +50,12 @@ class State:
         row, col = np.where(self.board == int(knight_id))
         row = row[0]
         col = col[0]
-        score = self.pos_eval[row][col]
-        if knight_id in self.my_knights:  #
+        if knight_id in self.my_knights:
+            score = self.pos_eval[row][col]
             return score * fact
 
         elif knight_id in self.enemy_knights:
+            score = self.pos_eval_enemy[row][col]
             return score * -1 * fact   #se multiplica por -1 porque el enemigo busca minimizar el puntaje
 
 
