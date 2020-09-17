@@ -278,21 +278,6 @@ class State:
         return best_moves[rand]
 
 
-    def return_random_movement(self):  #retorna movimientos aleatorios
-        movement = []
-        actions = self.get_actions()
-        element = random.choice(actions)
-        while not element[1]:
-            element = random.choice(actions)
-        knight_id = element[0]
-        knight_movements = element[1]
-        if not knight_movements:
-            raise Exception(element)
-        knight_move = knight_movements[random.randrange(0,len(knight_movements))]
-        movement.append(knight_id)
-        movement.append(knight_move)
-
-        return movement
 
 
 
