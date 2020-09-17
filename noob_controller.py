@@ -9,16 +9,6 @@ from typing import Tuple
 import logging
 
 
-
-class Action:
-    knight_id = 0
-    knight_movement = 0
-
-    def __init__(self, knight_id, knight_movement):
-        self.knight_id = knight_id
-        self.knight_movement = knight_movement
-
-
 class State:
     w = 8
     h = 8
@@ -26,11 +16,12 @@ class State:
     score = 0
     my_knights = []  #almacena id's de mis knights
     enemy_knights = [] #almacena id's de knights enemigos
-    turn = 1
-    previous_move = []
+    turn = 1 #turno del jugador = 1, turno oponente = 2
+    previous_move = [] #se almacena el movimiento previo al estado para utilizarlo si es bueno
+    #con este array se evalua la posicion de las piezas
     pos_eval = np.array(
-    [[-50,-40,-30,-30,-30,-30,-40,-50], 
-    [-40,-20,  0,  0,  0,  0,-20,-40], 
+    [[-50,-40,-30,-30,-30,-30,-40,-50],
+    [-40,-20,  0,  0,  0,  0,-20,-40],
     [-30,  0, 10, 15, 15, 10,  0,-30],
     [-30,  5, 15, 20, 20, 15,  5,-30],
     [-30,  0, 15, 20, 20, 15,  0,-30],
@@ -39,12 +30,11 @@ class State:
     [-50,-40,-30,-30,-30,-30,-40,-50]])
 
     def __init__(self, board, my_knights, enemy_knights):
-        self.board = np.array(board)
+        self.board = np.array(board) #estado tablero
         self.my_knights = my_knights   #id's de mis knights
         self.enemy_knights = enemy_knights #id's de knights enemigos
 
-    def get_position_score(self, knight_id):
-        log = logging.getLogger()
+    def get_position_score(self, knight_id):  #con esta funcion se evalua el puntaje de la posicion de un caballo
         score = 0
         fact = 0.002 #a mayor valor de factor, mas importancia se dara a la posición de los caballos
         row, col = np.where(self.board == int(knight_id))
@@ -54,18 +44,18 @@ class State:
         if knight_id in self.my_knights:  #
             return score * fact
 
-        elif knight_id in self.enemy_knights:  
-            return score * -1 * fact
+        elif knight_id in self.enemy_knights:
+            return score * -1 * fact   #se multiplica por -1 porque el enemigo busca minimizar el puntaje
 
-             
-    
-    def update_score(self):  #score para evaluar estados
+
+
+    def update_score(self):  #función para actualizar el puntaje del estado
         self.score = len(self.my_knights) - len(self.enemy_knights)
         for knight in self.my_knights:
             self.score += self.get_position_score(knight)
         for knight in self.enemy_knights:
             self.score += self.get_position_score(knight)
-            
+
 
 
 
@@ -102,23 +92,24 @@ class State:
         else:
             print("Error: Movimiento no encontrado")
 
-        if nx < 8 and ny < 8 and nx >= 0 and ny >= 0:
+        if nx < 8 and ny < 8 and nx >= 0 and ny >= 0:  #si la jugada no sobrepasa el tablero
             if self.board[ny][nx]:
                 if self.turn == 1:
-                    if str(self.board[ny][nx]) in self.my_knights:
+                    if str(self.board[ny][nx]) in self.my_knights:  #si el lugar esta ocupado por un caballo propio
                         is_taken = True
-                    else: 
+                    else:
                         return movement_number
                 else:
                     if str(self.board[ny][nx]) in self.enemy_knights:
                         is_taken = True
                     else:
                         return movement_number
-            else:    
-                return movement_number    
+            else:
+                return movement_number
 
     def get_movement_trans(self, knight_pos, movement_number: int) -> Tuple[int, int, int]:
-
+        #Esta funcion hace lo mismo que la anterior, pero retorna una tupla con la posicion y el id del caballo enemigo
+        #en la nueva posicion, si es que hay.
         x = knight_pos[1]
         y = knight_pos[0]
         is_taken = False
@@ -154,9 +145,9 @@ class State:
         if nx < 8 and ny < 8 and nx >= 0 and ny >= 0:
             if self.board[ny][nx]:
                 return nx, ny,self.board[ny][nx]
-            else:    
-                return nx, ny, None    
-   
+            else:
+                return nx, ny, None
+
     def get_knight_actions(self, knight):  #recibe id de knight, retorna acciones posibles ej: (1, 2, 3)
         knight_actions = []
         knight_pos = np.argwhere(self.board == int(knight))
@@ -177,11 +168,13 @@ class State:
         else:
             for knight in self.enemy_knights:
                 knight_actions = self.get_knight_actions(knight)
-                possible_actions.append([knight, knight_actions])  
+                possible_actions.append([knight, knight_actions])
 
         return possible_actions
 
-    def transition(self, knight_id, movement_number):  #retorna el estado despues de hacer movimiento
+    def transition(self, knight_id, movement_number):
+        #retorna el estado despues de hacer un movimiento, actualiza
+        #puntaje, turno y lista de caballos
         new_state = copy.deepcopy(self)
         knight_pos = np.argwhere(new_state.board == int(knight_id))
         knight_pos = knight_pos[0]
@@ -207,49 +200,11 @@ class State:
                     new_state.my_knights.remove(str(new_pos[2]))
             new_state.update_score() #calcula puntaje del nuevo estado
             return new_state
-    
-    def minimax(self):
-        states = []
-        plays = self.get_actions()  #lista de forma [knight_id, [mov_posibles]]
-        best_score = -100000
-        for knight in plays:
-            knight_id = knight[0]
-            possible_moves = knight[1]
-            for move in possible_moves:
-                states.append(self.transition(knight_id, move))  #adiciona cada jugada posible a la lista de estados
 
 
-        for state in states:  #por cada estado directo desde el primero
-            enemy_states = []     
-            enemy_plays = state.get_actions()
-            for enemy_knight in enemy_plays:
-                knight_id = enemy_knight[0]
-                possible_moves = enemy_knight[1]
-                for enemy_move in possible_moves:
-                    enemy_states.append(state.transition(knight_id, enemy_move))  #adiciona cada jugada posible a la lista de estados enemigos
-            enemy_states.sort(key=lambda x: x.score)
-            best_enemy_state = enemy_states[1]
-            last_plays = best_enemy_state.get_actions()  #PROBLEMA
-            last_states = []
 
-            
-            for knight in last_plays:
-                knight_id = knight[0]
-                possible_moves = knight[1]
-                for move in possible_moves:
-                    last_states.append(best_enemy_state.transition(knight_id, move))
-            last_states.sort(key = lambda x: x.score, reverse= True)
-            best_outcome = last_states[0]   
- 
-            if best_outcome.score > best_score:
-                best_score = best_outcome.score
-                best_play = state.previous_move
-
-        return best_play
-
-
-    
-    def minimax_dos(self, depth):
+    def minimax(self, depth):
+        #algoritmo minimax, recibe como parametro la profundidad de la búsqueda
         log = logging.getLogger()
         states = []
         plays = self.get_actions()  #lista de forma [knight_id, [mov_posibles]]
@@ -260,9 +215,9 @@ class State:
             possible_moves = knight[1]
             for move in possible_moves:
                 states.append(self.transition(knight_id, move))  #adiciona cada jugada posible a la lista de estados
-        
+
         for state in states:
-            if len(state.enemy_knights) > 0:
+            if len(state.enemy_knights) > 0:  #si el enemigo no le quedan caballos, retorna esa jugada
                 for i in range(depth-1):
                     move = state.best_available_movement()
                     next_state = state.transition(move[0], move[1])
@@ -281,7 +236,7 @@ class State:
         return best_plays[rand]
 
 
-    def best_available_movement(self):
+    def best_available_movement(self):  #función que evalúa las jugadas posibles y retorna la con mayor puntaje
         log = logging.getLogger()
         states = []
         plays = self.get_actions()  #lista de forma [knight_id, [mov_posibles]]
@@ -292,7 +247,7 @@ class State:
                 knight_id = knight[0]
                 possible_moves = knight[1]
                 for move in possible_moves:
-                    states.append(self.transition(knight_id, move))  #adiciona cada jugada posible a la lista de estados  
+                    states.append(self.transition(knight_id, move))  #adiciona cada jugada posible a la lista de estados
 
 
             for state in states:
@@ -309,7 +264,7 @@ class State:
                 knight_id = knight[0]
                 possible_moves = knight[1]
                 for move in possible_moves:
-                    states.append(self.transition(knight_id, move))  #adiciona cada jugada posible a la lista de estados  
+                    states.append(self.transition(knight_id, move))  #adiciona cada jugada posible a la lista de estados
 
 
             for state in states:
@@ -321,7 +276,7 @@ class State:
                     best_moves.append(state.previous_move)
         rand = random.randrange(0,len(best_moves))
         return best_moves[rand]
-                        
+
 
     def return_random_movement(self):  #retorna movimientos aleatorios
         movement = []
@@ -342,34 +297,29 @@ class State:
 
 
 
-        
+
 
 if __name__ == "__main__":
     # Obteniendo cadena de entrada (formato json)
 
     state_json = sys.argv[1]
-
+    depth = 4
     # Transformando la cadena de entrada en diccionario
-    state = json.loads(state_json) 
+    state = json.loads(state_json)
 
     current_board = list(state['ids'])
     # Obteniendo lista de caballos
     my_knights = list(state['my_knights_dict'].keys())
     enemy_knights = list(state['enemy_knights_dict'].keys())
 
-    state_class = State(current_board, my_knights, enemy_knights)
-    test = state_class.best_available_movement()
+    current_state = State(current_board, my_knights, enemy_knights)
 
-    best_outcome = state_class.minimax_dos(4)
-    knight_id = random.choice(my_knights)
-
-    # Eligiendo movimiento aleatoriamente
-    knight_movement = random.choice(range(7))
+    minimax_play = current_state.minimax(depth)
 
     # Creando diccionario de resultado
     result = {
-        "knight_id": best_outcome[0],
-        "knight_movement": best_outcome[1]
+        "knight_id": minimax_play[0],
+        "knight_movement": minimax_play[1]
     }
 
 
