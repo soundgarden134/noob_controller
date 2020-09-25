@@ -3,7 +3,7 @@ Controlador para juego de Knight Chess
 
 ### Algoritmo
 
-Para resolver el problema se utiliza minimax. El algoritmo funciona de la siguiente manera:
+El algoritmo funciona de la siguiente manera:
 1. Se obtienen todas las jugadas posibles dado un estado
 2. Por cada jugada posible, se utiliza la función best_available_movement, que encuentra la jugada mejor evaluada, ya sea para el jugador o para el rival, un total de n-1 veces, donde n es la profundidad del minimax (por defecto, n es 4).
 3. Una vez llega al final de esta búsqueda, compara el puntaje final con el mejor puntaje actual, y si es un mejor puntaje, se almacena como la mejor jugada y se reemplaza el mejor puntaje. En caso de que el puntaje sea igual, se crea una lista con las jugadas de igual puntaje. En caso de ser un puntaje menor, se ignora.
