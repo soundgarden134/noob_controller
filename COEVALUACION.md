@@ -1,8 +1,8 @@
-Nicolás Avendaño   - 35%
+Nicolás Avendaño   - 34%
 
-Matias Morales     - 32.5%
+Matias Morales     - 33%
 
-Gonzalo Vicencio   - 32.5%
+Gonzalo Vicencio   - 33%
 
 Nicolás Avendaño
 
